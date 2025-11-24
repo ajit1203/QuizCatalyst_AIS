@@ -1,0 +1,13 @@
+# Ignore huge folders during build (Volumes will provide them at runtime)
+src/models
+src/data
+src/rag/__pycache__
+src/utils/__pycache__
+src/models/__pycache__
+
+# Ignore system files
+**/__pycache__
+**/*.pyc
+.git
+.vscode
+venv

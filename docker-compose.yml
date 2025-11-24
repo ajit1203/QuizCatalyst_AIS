@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  quizcatalyst:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile
+    container_name: quiz_catalyst_container
+    ports:
+      - "8501:8501" # App
+      - "8000:8000" # Metrics
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./src:/app/src
+      - ./monitoring/logs:/app/monitoring/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - quizcatalyst
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    depends_on:
+      - prometheus

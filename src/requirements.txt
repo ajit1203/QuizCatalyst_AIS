@@ -1,0 +1,11 @@
+streamlit
+llama-cpp-python
+huggingface-hub
+sentence-transformers
+chromadb
+pypdf
+langchain
+langchain_community
+numpy
+pandas
+prometheus_client==0.16.0

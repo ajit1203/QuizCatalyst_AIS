@@ -1,60 +1,195 @@
+<div align="center">
+
 # QuizKatalyst
 
-QuizKatalyst is an open-source, personalized AI tutor. It combines streamed AI tutoring, document-grounded learning, quizzes, study-material generation, interactive canvases, and a persistent learner model.
+### An adaptive AI learning workspace that teaches, checks, and evolves with the learner.
 
-The application can use **Groq Cloud** for fast inference or **Ollama** as a private local-model fallback. API keys stay in the backend and are never exposed to the browser.
+<p>
+  <img alt="React" src="https://img.shields.io/badge/React-18-20232a?style=for-the-badge&logo=react&logoColor=61DAFB">
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-20%2B-1f2937?style=for-the-badge&logo=node.js&logoColor=78B65A">
+  <img alt="Groq" src="https://img.shields.io/badge/Groq-Cloud-F55036?style=for-the-badge">
+  <img alt="Ollama" src="https://img.shields.io/badge/Ollama-Local-111111?style=for-the-badge&logo=ollama&logoColor=white">
+  <img alt="Status" src="https://img.shields.io/badge/Status-Active_Development-7C8C63?style=for-the-badge">
+</p>
 
-## Main capabilities
+<p>
+  <a href="#-why-quizkatalyst">Why QuizKatalyst</a> ·
+  <a href="#-product-experience">Experience</a> ·
+  <a href="#-how-the-adaptive-loop-works">Adaptive loop</a> ·
+  <a href="#-architecture">Architecture</a> ·
+  <a href="#-run-locally">Run locally</a>
+</p>
 
-- **Open Tutor:** general tutoring without an uploaded source.
-- **Source Focus:** answers restricted to uploaded PDF, text, or Markdown files.
-- **Quiz Studio:** source-grounded quizzes for a complete document or selected PDF pages, with learner-selected difficulty and AI-managed concept coverage.
-- **Material Studio:** personalized study guides, revision notes, quick references, flashcards, source proof, micro-checks, and alternative explanations.
-- **Learning Paths:** full-source concept extraction, prerequisite mapping, importance ranking, coverage auditing, and next-step recommendations.
-- **Interactive Visual Lab:** draggable concept maps, guided steps, live variables, predictions, comparisons, chemistry tools, math explorers, and an embedded canvas tutor.
-- **Chat workspace:** streamed responses, conversation history, chat renaming, pinning, and deletion.
+</div>
 
-## Closed-loop adaptive learning
+![QuizKatalyst adaptive tutor workspace](docs/assets/quizkatalyst-workspace.png)
 
-QuizKatalyst keeps teaching decisions separate from language generation:
+QuizKatalyst is an open-source personalized AI tutor for active learning—not just answer generation. It combines streaming conversation, document-grounded tutoring, adaptive checks, source-aware quizzes, study-material generation, and interactive learning canvases in one focused workspace.
 
-```text
-Student activity
-      ↓
-Evidence classification
-      ↓
-Per-concept learner model
-      ↓
-Adaptive orchestrator
-      ↓
-Next teaching action
-      ↓
-New assessed evidence
+The system keeps a private concept-level learner model and uses observed evidence to decide what should happen next: explain differently, repair a misconception, rebuild a prerequisite, provide practice, test transfer, schedule review, or move forward.
+
+> **Core principle:** the language model communicates; the learning system decides how to teach.
+
+## ✦ Why QuizKatalyst
+
+Most AI study tools produce the same kind of response for every learner. QuizKatalyst closes the loop between teaching and evidence.
+
+| Typical AI chat | QuizKatalyst |
+| --- | --- |
+| Gives an answer and waits | Selects the next useful teaching action |
+| Treats every interaction equally | Weights evidence by reliability |
+| Forgets what the learner struggled with | Tracks mastery and misconceptions per concept |
+| Uses uploaded files as loose context | Provides a strict source-grounded mode |
+| Generates fixed-length quizzes | Covers important concepts across the selected scope |
+| Treats clicks as understanding | Uses interaction telemetry only as weak evidence |
+
+## ✦ Product experience
+
+### Two tutoring modes
+
+- **Open Tutor** — broad tutoring for explanations, exploration, examples, and general knowledge.
+- **Source Focus** — answers, quizzes, and materials grounded only in uploaded PDF, text, or Markdown sources.
+
+### One connected learning workspace
+
+| Experience | What it does |
+| --- | --- |
+| **Adaptive Tutor** | Streams responses and asks checks only when they add learning value. |
+| **Quiz Studio** | Builds grounded quizzes from a full document or selected PDF pages, at a learner-selected difficulty. |
+| **Material Studio** | Generates study guides, revision notes, quick references, flashcards, source proof, micro-checks, and alternate explanations. |
+| **Learning Paths** | Extracts concepts, maps prerequisites, ranks importance, audits coverage, and recommends the next step. |
+| **Interactive Visual Lab** | Creates draggable concept maps, live variables, predictions, comparisons, chemistry tools, and math explorers. |
+| **Learning Profile** | Maintains concept mastery, confidence, misconceptions, strategy performance, and review timing. |
+| **Chat Workspace** | Supports streaming, saved history, automatic titles, renaming, pinning, and deletion. |
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/assets/quiz-studio.png" alt="Quiz Studio with source, page range, and difficulty controls">
+      <p align="center"><strong>Quiz Studio</strong><br><sub>Choose a source, scope, and difficulty while AI protects concept coverage.</sub></p>
+    </td>
+    <td width="50%">
+      <img src="docs/assets/material-studio.png" alt="Material Studio with source-grounded flashcards">
+      <p align="center"><strong>Material Studio</strong><br><sub>Turn selected source material into active, revisable learning assets.</sub></p>
+    </td>
+  </tr>
+</table>
+
+## ✦ How the adaptive loop works
+
+```mermaid
+flowchart LR
+    A[Student interaction] --> B{Evidence classifier}
+    B -->|Strong| C[Assessed performance]
+    B -->|Moderate| D[Confusion and feedback]
+    B -->|Weak| E[Exploration telemetry]
+    C --> F[Concept-level learner model]
+    D --> F
+    E --> F
+    F --> G[Adaptive orchestrator]
+    G --> H{Best next move}
+    H --> I[Explain or repair]
+    H --> J[Practice or transfer]
+    H --> K[Review or advance]
+    I --> L[New learner evidence]
+    J --> L
+    K --> L
+    L --> F
+
+    classDef primary fill:#273528,color:#ffffff,stroke:#273528;
+    classDef accent fill:#e9eee2,color:#273528,stroke:#8fa177;
+    classDef neutral fill:#f7f7f4,color:#273528,stroke:#c9cec4;
+    class A,G,H primary;
+    class F,L accent;
+    class B,C,D,E,I,J,K neutral;
 ```
 
-The orchestrator can establish a diagnostic baseline, explain an idea, repair a misconception, rebuild a weak prerequisite, provide guided practice, test application or transfer, schedule spaced retrieval, or advance to a deeper concept.
+### Evidence is not treated equally
 
-Evidence is weighted by reliability:
+| Evidence tier | Reliability | Examples | How it is used |
+| --- | --- | --- | --- |
+| **Strong** | High | Assessed chat answers, completed quizzes, verified chemistry predictions | Can substantially update mastery |
+| **Moderate** | Medium | Explicit confusion, alternate-explanation requests, learner feedback | Adjusts strategy and flags possible gaps |
+| **Weak** | Low | Canvas movement, exploration behavior, self-reported understanding | Guides attention; never proves mastery |
 
-| Evidence | Weight | Examples |
-| --- | --- | --- |
-| Strong | High | Assessed chat answers, quizzes, verified chemistry predictions |
-| Moderate | Medium | Explicit confusion, alternative-explanation requests, learner feedback |
-| Weak | Low | Canvas exploration and self-reported understanding |
+The orchestrator can choose among diagnostic checks, concise explanations, guided practice, misconception repair, prerequisite rebuilding, application, transfer, spaced retrieval, and advancement. Cadence guardrails prevent the tutor from interrupting the learner with a question after every response.
 
-Canvas clicks and movement can guide the next explanation, but they never count as proof of mastery. The system does not continuously retrain the language model; it adapts a private learner state and teaching policy for each user.
+## ✦ Architecture
 
-## Project structure
+```mermaid
+flowchart TB
+    subgraph Client[React learning workspace]
+        Chat[Streaming chat]
+        Quiz[Quiz Studio]
+        Material[Material Studio]
+        Canvas[Interactive Visual Lab]
+        Profile[Learning Profile]
+    end
+
+    subgraph API[Express application layer]
+        Routes[REST and streaming routes]
+        Docs[Source document pipeline]
+        Orchestrator[Adaptive orchestrator]
+        Domain[Verified domain engines]
+    end
+
+    subgraph Intelligence[Teaching intelligence]
+        Learner[Learner model]
+        Policy[Teaching policy]
+        Paths[Concept and prerequisite graph]
+    end
+
+    subgraph Providers[Model providers]
+        Adapter[Provider adapter]
+        Groq[Groq Cloud]
+        Ollama[Ollama local models]
+    end
+
+    subgraph Storage[Private local state]
+        JSON[(Chats, sources, mastery and events)]
+    end
+
+    Client --> Routes
+    Routes --> Docs
+    Routes --> Orchestrator
+    Routes --> Domain
+    Orchestrator <--> Learner
+    Orchestrator <--> Policy
+    Orchestrator <--> Paths
+    Routes --> Adapter
+    Adapter --> Groq
+    Adapter --> Ollama
+    Routes <--> JSON
+
+    classDef primary fill:#273528,color:#ffffff,stroke:#273528;
+    classDef accent fill:#e9eee2,color:#273528,stroke:#8fa177;
+    classDef neutral fill:#f7f7f4,color:#273528,stroke:#c9cec4;
+    class Routes,Orchestrator,Adapter primary;
+    class Learner,Policy,Paths accent;
+    class Chat,Quiz,Material,Canvas,Profile,Docs,Domain,Groq,Ollama,JSON neutral;
+```
+
+### Design decisions
+
+- **Adapt state, not shared model weights.** Every learner gets an independent profile without continuously retraining the LLM.
+- **Keep pedagogy deterministic where possible.** The orchestrator and teaching policy sit outside the model prompt.
+- **Ground source workflows.** Source Focus limits the context used for answers, quizzes, and generated materials.
+- **Verify high-risk interactions.** Deterministic domain engines are used when correctness must not depend on plausible text generation.
+- **Keep providers replaceable.** Groq is the fast hosted option; Ollama is the private local fallback.
+
+## ✦ Repository map
 
 ```text
 QuizKatalyst/
-├── frontend/                 React + Vite interface
-│   └── src/
-│       ├── main.jsx          Chat, quiz, materials, canvas and learner UI
-│       └── styles.css        Application design system
-├── backend/                  Express API and local data store
+├── frontend/
 │   ├── src/
-│   │   ├── server.js         API routes and feature integration
+│   │   ├── main.jsx              Chat, quiz, materials, canvas and profile UI
+│   │   └── styles.css            Product design system
+│   ├── index.html
+│   └── vite.config.js
+├── backend/
+│   ├── src/
+│   │   ├── server.js             API routes and feature integration
 │   │   ├── adaptive-orchestrator.js
 │   │   ├── learner-model.js
 │   │   ├── teaching-policy.js
@@ -62,39 +197,50 @@ QuizKatalyst/
 │   │   ├── source-documents.js
 │   │   ├── chemistry-engine.js
 │   │   └── llm-provider.js
-│   ├── scripts/              Automated and integration tests
-│   ├── data.json             Local chats and learner data
-│   └── .env.example          Provider configuration template
+│   ├── scripts/                  Automated and integration tests
+│   └── .env.example              Safe provider configuration template
+├── docs/assets/                  README product imagery
 └── README.md
 ```
 
-## Technology
+## ✦ Technology
 
-- React 18 and Vite
-- React Flow for interactive learning maps
-- Express for the backend API
-- Groq-compatible chat completions
-- Ollama local inference fallback
-- Local JSON persistence
-- `pdf-parse` for PDF extraction
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, Vite, React Flow, Lucide icons |
+| Backend | Node.js, Express, streaming responses |
+| Model providers | Groq-compatible chat completions, Ollama fallback |
+| Documents | Multer uploads, `pdf-parse`, grounded page-aware context |
+| Persistence | Local JSON storage for the current single-user build |
+| Evaluation | Deterministic scenario, API, retry, chemistry, source, and learning-path tests |
 
-## Run locally
+## ✦ Run locally
 
-Requirements: Node.js 20 or newer.
+### Prerequisites
 
-### 1. Start the backend
+- Node.js 20 or newer
+- npm
+- A Groq API key **or** a running Ollama installation
+
+### 1. Configure and start the backend
 
 ```bash
 cd backend
 npm install
 cp .env.example .env
-# Add GROQ_API_KEY to backend/.env, or configure Ollama.
+```
+
+Add your provider configuration to `backend/.env`, then start the API:
+
+```bash
 npm run dev
 ```
 
-The backend runs at `http://127.0.0.1:8787`.
+The backend starts at `http://127.0.0.1:8787`.
 
 ### 2. Start the frontend
+
+In a second terminal:
 
 ```bash
 cd frontend
@@ -104,17 +250,16 @@ npm run dev -- --host 127.0.0.1
 
 Open `http://127.0.0.1:5173/`.
 
-## Provider configuration
-
-Important variables in `backend/.env`:
+## ✦ Provider configuration
 
 ```env
+# Fast hosted inference
 LLM_PROVIDER=groq
 GROQ_API_KEY=your_key_here
 GROQ_TUTOR_MODEL=openai/gpt-oss-120b
 GROQ_EVALUATOR_MODEL=openai/gpt-oss-20b
 
-# Local fallback
+# Private local fallback
 OLLAMA_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=phi3:latest
 OLLAMA_EVALUATOR_MODEL=phi3:latest
@@ -122,34 +267,51 @@ OLLAMA_EVALUATOR_MODEL=phi3:latest
 PORT=8787
 ```
 
-Never place provider keys in frontend environment variables or commit `backend/.env`.
+Set `LLM_PROVIDER=ollama` to use the local provider. Never place provider keys in frontend variables or commit `backend/.env`.
 
-## Testing
+## ✦ Test the system
 
 ```bash
+# Backend engine, API, and integration suite
 cd backend
-npm test                 # Complete backend suite
+npm test
+
+# Focused adaptive-orchestrator scenarios
 npm run test:orchestrator
 
+# Production frontend build
 cd ../frontend
 npm run build
 ```
 
-Tests cover learner-state updates, teaching policies, 14 orchestrator scenarios, quiz-to-mastery integration, duplicate quiz protection, Groq streaming retries, chemistry behavior, document processing, and learning paths.
+The suite covers learner-state updates, teaching policies, 14 orchestration scenarios, quiz-to-mastery integration, duplicate-submission protection, Groq streaming retries, chemistry behavior, source processing, and learning-path generation.
 
-## Privacy and safety
+## ✦ Privacy and safety
 
-- Learner history is stored locally in `backend/data.json`.
-- One student’s memory is not written into shared model weights.
-- Source Focus refuses to use information outside uploaded material.
+- API keys stay in `backend/.env` and never enter the browser bundle.
+- Chats, source metadata, learning events, and learner history stay in the ignored local `backend/data.json` file.
+- One learner's memory is never written into shared model weights.
+- Source Focus is designed to refuse unsupported information outside uploaded material.
+- Canvas activity is treated as behavioral context, not proof of understanding.
 - Generic simulations are labeled conceptual.
-- Verified domain engines are used where deterministic correctness is required.
-- Unsupported chemistry combinations are rejected rather than guessed.
+- Unsupported chemistry combinations are rejected instead of guessed.
 
-## Current development priorities
+## ✦ Roadmap
 
-1. First-run provider selection for Groq or local Ollama.
-2. User accounts and a production database for multi-user deployment.
-3. More deterministic plugins for mathematics, physics, finance, and science.
-4. Learner-profile and study-history export/import.
-5. Accessibility, performance, and model-qualification benchmarks.
+- [ ] First-run provider selection for Groq or local Ollama
+- [ ] Authentication and a production database for multi-user deployment
+- [ ] Deterministic learning plugins for mathematics, physics, finance, and science
+- [ ] Learner-profile and study-history export/import
+- [ ] Accessibility and performance audits
+- [ ] Model-quality and pedagogical-effectiveness benchmarks
+
+## ✦ Contributing
+
+QuizKatalyst is in active development. Bug reports, design feedback, test cases, domain engines, and pedagogical improvements are welcome. Before opening a large pull request, start with an issue describing the learner problem and the evidence you will use to verify the improvement.
+
+<div align="center">
+  <br>
+  <strong>Build for understanding, not just answers.</strong>
+  <br><br>
+  <sub>QuizKatalyst · Adaptive learning, grounded in evidence</sub>
+</div>

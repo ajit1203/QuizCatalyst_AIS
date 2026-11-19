@@ -1,229 +1,155 @@
-# QuizCatalyst
+# QuizKatalyst
 
-### A local-first, retrieval-augmented learning assistant for grounded educational support
+QuizKatalyst is an open-source, personalized AI tutor. It combines streamed AI tutoring, document-grounded learning, quizzes, study-material generation, interactive canvases, and a persistent learner model.
 
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Interface-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![RAG](https://img.shields.io/badge/Method-Retrieval--Augmented%20Generation-6C63FF)](#system-design)
-[![Status](https://img.shields.io/badge/Status-Research%20Prototype-F2A900)](#project-status)
+The application can use **Groq Cloud** for fast inference or **Ollama** as a private local-model fallback. API keys stay in the backend and are never exposed to the browser.
 
-QuizCatalyst explores how a compact, locally hosted language model can support learning from student-provided course material. Students can upload a PDF, ask questions grounded in that document, generate revision material, retain chat history, and provide response-level feedback.
+## Main capabilities
 
-The repository brings the application, retrieval pipeline, lightweight fine-tuning workflow, data-risk controls, and observability stack into one reproducible research prototype.
+- **Open Tutor:** general tutoring without an uploaded source.
+- **Source Focus:** answers restricted to uploaded PDF, text, or Markdown files.
+- **Quiz Studio:** source-grounded quizzes for a complete document or selected PDF pages, with learner-selected difficulty and AI-managed concept coverage.
+- **Material Studio:** personalized study guides, revision notes, quick references, flashcards, source proof, micro-checks, and alternative explanations.
+- **Learning Paths:** full-source concept extraction, prerequisite mapping, importance ranking, coverage auditing, and next-step recommendations.
+- **Interactive Visual Lab:** draggable concept maps, guided steps, live variables, predictions, comparisons, chemistry tools, math explorers, and an embedded canvas tutor.
+- **Chat workspace:** streamed responses, conversation history, chat renaming, pinning, and deletion.
 
-> [!IMPORTANT]
-> QuizCatalyst is an experimental educational system, not an authoritative source or a replacement for an instructor. Generated answers should be checked against the original material.
+## Closed-loop adaptive learning
 
-## Research contribution
-
-QuizCatalyst is intended as a practical reference implementation for studying:
-
-- private, local inference with a quantized 7B-parameter model;
-- document-grounded tutoring with retrieval-augmented generation (RAG);
-- lightweight educational adaptation using QLoRA and instruction data;
-- feedback signals for qualitative evaluation of generative tutors;
-- preprocessing controls for toxicity, personally identifiable information, bias review, and dataset provenance; and
-- operational monitoring of generation, retrieval, ingestion, and user-feedback behavior.
-
-Rather than presenting a new foundation model, the contribution is the integration of these components into an inspectable end-to-end educational AI system.
-
-## System design
-
-```mermaid
-flowchart LR
-    U["Student"] --> UI["Streamlit interface"]
-    UI --> AUTH["Authentication and chat history"]
-    UI --> DP["PDF extraction and chunking"]
-    DP --> EMB["all-MiniLM-L6-v2 embeddings"]
-    EMB --> VS["ChromaDB vector store"]
-    Q["Student question"] --> RET["Semantic retrieval"]
-    VS --> RET
-    RET --> PROMPT["Grounded prompt"]
-    PROMPT --> LLM["Quantized Mistral-7B via llama.cpp"]
-    LLM --> UI
-    UI --> FB["Feedback CSV"]
-    UI --> MET["Prometheus metrics"]
-    MET --> GRAF["Grafana"]
-```
-
-The application offers two modes:
-
-| Mode | Behavior |
-|---|---|
-| **LLM** | Conversational generation without document retrieval |
-| **RAG + LLM** | Retrieves relevant PDF chunks and supplies them as context to the model |
-
-## Features
-
-- Account creation, login, and persistent chat history
-- PDF text extraction and overlapping recursive chunking
-- Local Sentence-Transformer embeddings and persistent ChromaDB search
-- Local GGUF inference through `llama-cpp-python`
-- Automatic chat titles and study-guide generation
-- Per-response thumbs-up/down feedback with optional comments
-- Prometheus metrics for latency, response length, retrieval, ingestion, and feedback
-- Docker Compose services for the application, Prometheus, and Grafana
-- QLoRA fine-tuning workflow based on a sampled Dolly instruction dataset
-- Data preparation utilities for provenance logging, toxicity filtering, PII redaction, and descriptive bias auditing
-
-## Repository structure
+QuizKatalyst keeps teaching decisions separate from language generation:
 
 ```text
-QuizCatalyst_Submission/
-├── src/
-│   ├── main.py                  # Streamlit application and orchestration
-│   ├── config.py                # Model, storage, and retrieval configuration
-│   ├── models/                  # LLM, embedding code, and LoRA adapter
-│   ├── rag/                     # PDF processing, vector storage, and retrieval
-│   ├── training/                # Dataset preparation and QLoRA training
-│   ├── utils/                   # Authentication, persistence, feedback, metrics
-│   └── data/                    # Local uploads and persistent Chroma data
-├── risk_management/             # Data safety and provenance utilities
-├── monitoring/prometheus/       # Prometheus scrape configuration
-├── deployment/Dockerfile        # CUDA-enabled application image
-├── docker-compose.yml           # App, Prometheus, and Grafana services
-└── documentation/               # Research and system-design report
+Student activity
+      ↓
+Evidence classification
+      ↓
+Per-concept learner model
+      ↓
+Adaptive orchestrator
+      ↓
+Next teaching action
+      ↓
+New assessed evidence
 ```
 
-## Getting started
+The orchestrator can establish a diagnostic baseline, explain an idea, repair a misconception, rebuild a weak prerequisite, provide guided practice, test application or transfer, schedule spaced retrieval, or advance to a deeper concept.
 
-### Prerequisites
+Evidence is weighted by reliability:
 
-- Docker with Docker Compose
-- An NVIDIA GPU, compatible driver, and NVIDIA Container Toolkit
-- A compatible Mistral-7B GGUF model file
-- Approximately 8–16 GB of available GPU memory, depending on quantization and context size
+| Evidence | Weight | Examples |
+| --- | --- | --- |
+| Strong | High | Assessed chat answers, quizzes, verified chemistry predictions |
+| Moderate | Medium | Explicit confusion, alternative-explanation requests, learner feedback |
+| Weak | Low | Canvas exploration and self-reported understanding |
 
-The base GGUF weights are not included in this repository. Obtain them from a source whose license permits your intended use, rename the file to `mistral-7b.gguf`, and place it at:
+Canvas clicks and movement can guide the next explanation, but they never count as proof of mastery. The system does not continuously retrain the language model; it adapts a private learner state and teaching policy for each user.
+
+## Project structure
 
 ```text
-src/models/mistral-7b.gguf
+QuizKatalyst/
+├── frontend/                 React + Vite interface
+│   └── src/
+│       ├── main.jsx          Chat, quiz, materials, canvas and learner UI
+│       └── styles.css        Application design system
+├── backend/                  Express API and local data store
+│   ├── src/
+│   │   ├── server.js         API routes and feature integration
+│   │   ├── adaptive-orchestrator.js
+│   │   ├── learner-model.js
+│   │   ├── teaching-policy.js
+│   │   ├── learning-path.js
+│   │   ├── source-documents.js
+│   │   ├── chemistry-engine.js
+│   │   └── llm-provider.js
+│   ├── scripts/              Automated and integration tests
+│   ├── data.json             Local chats and learner data
+│   └── .env.example          Provider configuration template
+└── README.md
 ```
 
-### Run the complete stack
+## Technology
+
+- React 18 and Vite
+- React Flow for interactive learning maps
+- Express for the backend API
+- Groq-compatible chat completions
+- Ollama local inference fallback
+- Local JSON persistence
+- `pdf-parse` for PDF extraction
+
+## Run locally
+
+Requirements: Node.js 20 or newer.
+
+### 1. Start the backend
 
 ```bash
-git clone https://github.com/ajit1203/QuizCatalyst_AIS.git
-cd QuizCatalyst_AIS
-docker compose up --build
+cd backend
+npm install
+cp .env.example .env
+# Add GROQ_API_KEY to backend/.env, or configure Ollama.
+npm run dev
 ```
 
-After startup, open:
+The backend runs at `http://127.0.0.1:8787`.
 
-- QuizCatalyst: <http://localhost:8501>
-- Prometheus: <http://localhost:9090>
-- Grafana: <http://localhost:3000>
+### 2. Start the frontend
 
-The development Grafana credentials configured in `docker-compose.yml` are `admin` / `admin`. Change them before exposing the service to any network.
-
-### First use
-
-1. Create a local account and sign in.
-2. Start a new chat.
-3. Select **RAG + LLM** mode.
-4. Upload a text-based PDF.
-5. Ask questions or generate a study guide.
-6. Rate responses to record qualitative feedback.
-
-Scanned or handwritten PDFs require OCR before upload.
-
-## Model and retrieval configuration
-
-Runtime defaults are defined in [`src/config.py`](src/config.py):
-
-| Setting | Default |
-|---|---:|
-| Base model | Mistral-7B-compatible GGUF |
-| Context window | 4,096 tokens |
-| Embedding model | `sentence-transformers/all-MiniLM-L6-v2` |
-| Chunk size | 1,000 characters |
-| Chunk overlap | 200 characters |
-| Retrieved chunks | 3 |
-| Maximum generated tokens | 1,024 |
-| Temperature | 0.7 |
-| Chroma distance | Cosine |
-
-## Fine-tuning and data governance
-
-The included adapter was trained from `mistralai/Mistral-7B-Instruct-v0.2` with rank-16 LoRA adapters targeting the query and value projection layers. The preprocessing workflow samples Databricks Dolly 15k and applies the following stages:
-
-```text
-Dolly sample
-   → provenance record
-   → toxicity filtering
-   → PII redaction
-   → chat-template formatting
-   → descriptive bias audit
-   → QLoRA supervised fine-tuning
+```bash
+cd frontend
+npm install
+npm run dev -- --host 127.0.0.1
 ```
 
-Relevant entry points:
+Open `http://127.0.0.1:5173/`.
 
-- [`src/training/process_data.py`](src/training/process_data.py) — dataset preparation
-- [`src/training/finetune.py`](src/training/finetune.py) — QLoRA training
-- [`risk_management/`](risk_management/) — provenance and risk controls
-- [`src/models/quizcatalyst-dolly-adapter/`](src/models/quizcatalyst-dolly-adapter/) — trained adapter artifact
+## Provider configuration
 
-The Dolly dataset is distributed under **CC BY-SA 3.0**. Base-model, embedding-model, and third-party dataset licenses remain independently applicable.
+Important variables in `backend/.env`:
 
-## Evaluation
+```env
+LLM_PROVIDER=groq
+GROQ_API_KEY=your_key_here
+GROQ_TUTOR_MODEL=openai/gpt-oss-120b
+GROQ_EVALUATOR_MODEL=openai/gpt-oss-20b
 
-The prototype currently supports instrumentation rather than a completed benchmark suite. Available signals include:
+# Local fallback
+OLLAMA_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=phi3:latest
+OLLAMA_EVALUATOR_MODEL=phi3:latest
 
-- end-to-end generation latency;
-- retrieval latency and cosine distance distribution;
-- retrieval attempts and non-empty context hits;
-- response length;
-- ingestion success and failure counts; and
-- explicit positive/negative user feedback.
-
-For research comparisons, report model and quantization details, hardware, prompt configuration, retrieval parameters, corpus composition, and a fixed question set. Groundedness, answer correctness, retrieval recall, latency percentiles, and human-rated pedagogical usefulness should be evaluated separately.
-
-## Responsible use and privacy
-
-- Do not upload confidential, regulated, or personally identifying material to a shared deployment.
-- The current prototype stores accounts, chats, feedback, uploaded files, and vector data locally without application-level encryption.
-- Generated content may contain hallucinations, omissions, or biased language.
-- Data preprocessing controls reduce risk but do not prove that a dataset or model is safe or unbiased.
-- Public deployments should add strong password hashing, per-user storage isolation, encrypted transport, access controls, retention policies, and security review.
-
-See the full [AI Systems Project Proposal](documentation/AI%20System%20project%20proposal/AI%20Systems%20Project%20Proposal.pdf) for the broader research rationale and design record.
-
-## Project status
-
-QuizCatalyst is a research prototype. The core application and observability paths are implemented, while production hardening, automated evaluation, tests, source attribution in generated answers, and strict multi-user document isolation remain future work.
-
-## Contributing
-
-Research and engineering contributions are welcome. Useful contribution areas include:
-
-- groundedness and retrieval benchmarks;
-- document-level and user-level vector-store isolation;
-- citations linking answers to retrieved passages;
-- automated tests and reproducible evaluation datasets;
-- accessible interaction design;
-- prompt-injection and adversarial-document defenses; and
-- model cards, dataset cards, and privacy documentation.
-
-Before opening a pull request, keep changes focused, document experimental assumptions, and include evidence for behavioral or performance claims. Please avoid committing model weights, user data, generated databases, or uploaded documents.
-
-## Citation
-
-If this repository supports your research or coursework, please cite it as:
-
-```bibtex
-@software{lingannagaru2025quizcatalyst,
-  author  = {Lingannagaru, Ajit Reddy},
-  title   = {QuizCatalyst: A Retrieval-Augmented Personalized Learning Assistant},
-  year    = {2025},
-  url     = {https://github.com/ajit1203/QuizCatalyst_AIS}
-}
+PORT=8787
 ```
 
-## License
+Never place provider keys in frontend environment variables or commit `backend/.env`.
 
-No software license file is currently included. Until one is added, copyright remains with the repository author and reuse may be restricted. Contributors and downstream users should also review the licenses of Mistral, Sentence Transformers, Dolly, and all other dependencies and artifacts.
+## Testing
 
----
+```bash
+cd backend
+npm test                 # Complete backend suite
+npm run test:orchestrator
 
-Developed by **Ajit Reddy Lingannagaru** as an applied AI systems research project.
+cd ../frontend
+npm run build
+```
+
+Tests cover learner-state updates, teaching policies, 14 orchestrator scenarios, quiz-to-mastery integration, duplicate quiz protection, Groq streaming retries, chemistry behavior, document processing, and learning paths.
+
+## Privacy and safety
+
+- Learner history is stored locally in `backend/data.json`.
+- One student’s memory is not written into shared model weights.
+- Source Focus refuses to use information outside uploaded material.
+- Generic simulations are labeled conceptual.
+- Verified domain engines are used where deterministic correctness is required.
+- Unsupported chemistry combinations are rejected rather than guessed.
+
+## Current development priorities
+
+1. First-run provider selection for Groq or local Ollama.
+2. User accounts and a production database for multi-user deployment.
+3. More deterministic plugins for mathematics, physics, finance, and science.
+4. Learner-profile and study-history export/import.
+5. Accessibility, performance, and model-qualification benchmarks.

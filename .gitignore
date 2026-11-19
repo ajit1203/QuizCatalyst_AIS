@@ -1,0 +1,9 @@
+.DS_Store
+backend/.env
+backend/data.json
+backend/data*.json
+backend/node_modules/
+frontend/node_modules/
+frontend/dist/
+outputs/
+npm-debug.log*
